@@ -1,18 +1,23 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import { AzureFunction, Context, HttpRequest } from "@azure/functions";
+import business = require('../lib/business/factory');
 
-const funcHttpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
-    context.log('HTTP trigger function processed a request.');
+const funcHttpTrigger: AzureFunction = async function (
+  context: Context,
+  req: HttpRequest
+): Promise<void> {
+  const instance = business.registry.getInstance({ bottler: req.params.bottler });
 
-    const name = (req.query.name || (req.body && req.body.name));
-    const responseMessage = name
-        ? `Hello, ${name}. This HTTP triggered function executed successfully.`
-        : "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.";
+  const documentId = req.params.document_id.replace(/[^\d]+/g, "");
 
-    context.res = {
-        status: 200, /* Defaults to 200 */
-        body: responseMessage
-    };
+  const params = { bottler: req.params.bottler, documentId };
+  const registry = await instance.getRegistry(params);
 
+  context.res = {
+    status: 200,
+    body: JSON.stringify(registry),
+    headers: { "Content-Type": "application/json" },
+    isRaw: true,
+  };
 };
 
 export default funcHttpTrigger;
